@@ -1,26 +1,29 @@
-import { useState, useEffect, useRef } from 'react';
+import { useState, useEffect } from 'react';
 import { useAuth } from '../context/AuthContext';
 import { useNavigate } from 'react-router-dom';
 import api from '../lib/api';
 
 const PROVIDER_COLORS = {
   OpenAI: '#10a37f', Groq: '#f55036', Tavily: '#6366f1',
-  Deepgram: '#13ef95', Anthropic: '#c96442', Gemini: '#4285f4', Other: '#8891aa',
+  Deepgram:  '#ec4899', Anthropic: '#c96442', Deepseek: '#00c2ff', Gemini: '#4285f4', Other: '#8891aa',
 };
 
-const TABS = [
-  { id: 'profile',     label: 'Profile',     icon: 'M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2M12 11a4 4 0 1 0 0-8 4 4 0 0 0 0 8z' },
-  { id: 'password',    label: 'Password',    icon: 'M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z' },
-  { id: 'appearance',  label: 'Appearance',  icon: 'M12 2a10 10 0 1 0 0 20 10 10 0 0 0 0-20zM12 6v6l4 2' },
-  { id: 'integration', label: 'Integration', icon: 'M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6M15 3h6v6M10 14L21 3' },
-  { id: 'contact',     label: 'Contact',     icon: 'M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z' },
-  { id: 'danger',      label: 'Danger zone', icon: 'M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0zM12 9v4M12 17h.01', danger: true },
-];
+const SectionLabel = ({ children, danger }) => (
+  <div style={{
+    fontSize: 11, fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.08em',
+    color: danger ? 'var(--error)' : 'var(--text-muted)',
+    paddingBottom: '0.75rem',
+    borderBottom: `0.5px solid ${danger ? 'rgba(248,113,113,0.4)' : 'var(--border)'}`,
+    marginBottom: '1.5rem',
+  }}>{children}</div>
+);
 
-/* ── Primitives ─────────────────────────────────────────────────────────── */
+const Divider = () => (
+  <div style={{ height: '0.5px', background: 'var(--border)', margin: '2.5rem 0' }} />
+);
 
 const Label = ({ children }) => (
-  <div style={{ fontSize: 12, fontWeight: 500, color: 'var(--text-secondary)', marginBottom: 6 }}>{children}</div>
+  <div style={{ fontSize: 12, color: 'var(--text-secondary)', marginBottom: 6 }}>{children}</div>
 );
 
 const TextInput = ({ type = 'text', value, onChange, placeholder, readOnly }) => (
@@ -38,29 +41,32 @@ const TextInput = ({ type = 'text', value, onChange, placeholder, readOnly }) =>
   />
 );
 
-const Btn = ({ onClick, loading, disabled, label, variant = 'primary' }) => {
-  const bg = variant === 'primary' ? 'var(--accent)' : 'transparent';
-  const color = variant === 'primary' ? '#fff' : variant === 'danger' ? 'var(--error)' : 'var(--text-secondary)';
-  const border = variant === 'danger' ? '1px solid var(--error)' : '1px solid var(--border)';
-  return (
-    <button onClick={onClick} disabled={loading || disabled} style={{
-      display: 'inline-flex', alignItems: 'center', gap: 7,
-      padding: '9px 18px', borderRadius: 'var(--radius-sm)', fontSize: 13, fontWeight: 500,
-      background: loading || disabled ? 'var(--border)' : bg,
-      color: loading || disabled ? 'var(--text-muted)' : color,
-      border: loading || disabled ? '1px solid var(--border)' : border,
-      cursor: loading || disabled ? 'not-allowed' : 'pointer',
-      transition: 'all var(--transition)', fontFamily: 'var(--font-sans)',
-    }}>
-      {loading && <span style={{ width: 12, height: 12, border: '2px solid rgba(255,255,255,0.3)', borderTopColor: variant === 'primary' ? '#fff' : 'var(--accent)', borderRadius: '50%', animation: 'spin 0.7s linear infinite', display: 'inline-block' }} />}
-      {label}
-    </button>
-  );
-};
+const TwoCol = ({ children }) => (
+  <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 16, marginBottom: 16 }}>{children}</div>
+);
+
+const Field = ({ label, children, mb = 16 }) => (
+  <div style={{ marginBottom: mb }}><Label>{label}</Label>{children}</div>
+);
+
+const Btn = ({ onClick, loading, disabled, label, variant = 'primary' }) => (
+  <button onClick={onClick} disabled={loading || disabled} style={{
+    display: 'inline-flex', alignItems: 'center', gap: 7,
+    padding: '9px 20px', borderRadius: 'var(--radius-sm)', fontSize: 13, fontWeight: 500,
+    background: loading || disabled ? 'var(--border)' : variant === 'primary' ? 'var(--accent)' : 'transparent',
+    color: loading || disabled ? 'var(--text-muted)' : variant === 'primary' ? '#fff' : variant === 'danger' ? 'var(--error)' : 'var(--text-secondary)',
+    border: variant === 'danger' ? '1px solid var(--error)' : variant === 'primary' ? 'none' : '1px solid var(--border)',
+    cursor: loading || disabled ? 'not-allowed' : 'pointer',
+    transition: 'all var(--transition)', fontFamily: 'var(--font-sans)',
+  }}>
+    {loading && <span style={{ width: 12, height: 12, border: '2px solid rgba(255,255,255,0.3)', borderTopColor: variant === 'primary' ? '#fff' : 'var(--accent)', borderRadius: '50%', animation: 'spin 0.7s linear infinite', display: 'inline-block' }} />}
+    {label}
+  </button>
+);
 
 const Alert = ({ msg, type }) => msg ? (
   <div style={{
-    padding: '9px 12px', borderRadius: 'var(--radius-sm)', fontSize: 13, marginBottom: 16,
+    padding: '10px 14px', borderRadius: 'var(--radius-sm)', fontSize: 13, marginBottom: 20,
     background: type === 'error' ? 'var(--error-subtle)' : 'var(--success-subtle)',
     border: `1px solid ${type === 'error' ? 'rgba(248,113,113,0.3)' : 'rgba(52,211,153,0.3)'}`,
     color: type === 'error' ? 'var(--error)' : 'var(--success)',
@@ -71,53 +77,269 @@ const CopyBtn = ({ text }) => {
   const [copied, setCopied] = useState(false);
   return (
     <button onClick={async () => { await navigator.clipboard.writeText(text); setCopied(true); setTimeout(() => setCopied(false), 1800); }} style={{
-      padding: '5px 10px', borderRadius: 'var(--radius-sm)', fontSize: 11, fontWeight: 500,
+      padding: '5px 12px', borderRadius: 'var(--radius-sm)', fontSize: 11, fontWeight: 500,
       background: 'transparent', border: '1px solid var(--border)',
       color: copied ? 'var(--success)' : 'var(--text-muted)', cursor: 'pointer',
-      display: 'inline-flex', alignItems: 'center', gap: 5, transition: 'all var(--transition)', flexShrink: 0,
+      display: 'inline-flex', alignItems: 'center', gap: 5,
+      transition: 'all var(--transition)', flexShrink: 0, fontFamily: 'var(--font-sans)',
     }}>
       {copied ? '✓ Copied' : 'Copy'}
     </button>
   );
 };
 
-const SectionCard = ({ id, title, subtitle, children, danger, sectionRefs }) => (
-  <div
-    id={id}
-    ref={el => { if (sectionRefs) sectionRefs.current[id] = el; }}
-    style={{
-      background: 'var(--bg-surface)', border: `1px solid ${danger ? 'rgba(248,113,113,0.35)' : 'var(--border)'}`,
-      borderRadius: 'var(--radius)', overflow: 'hidden', marginBottom: 20,
-    }}
-  >
-    <div style={{
-      padding: '14px 24px', borderBottom: `1px solid ${danger ? 'rgba(248,113,113,0.2)' : 'var(--border)'}`,
-      background: danger ? 'rgba(248,113,113,0.06)' : 'var(--bg-elevated)',
-    }}>
-      <div style={{ fontSize: 14, fontWeight: 600, color: danger ? 'var(--error)' : 'var(--text-primary)' }}>{title}</div>
-      {subtitle && <div style={{ fontSize: 12, color: danger ? 'rgba(248,113,113,0.8)' : 'var(--text-muted)', marginTop: 2 }}>{subtitle}</div>}
+const ProfileSection = () => {
+  const { user } = useAuth();
+  const [form, setForm] = useState({ name: user?.name || '', email: user?.email || '' });
+  const [loading, setLoading] = useState(false);
+  const [msg, setMsg] = useState({ text: '', type: '' });
+
+  const save = async () => {
+    setLoading(true); setMsg({ text: '', type: '' });
+    try {
+      await api.patch('/settings/profile', form);
+      setMsg({ text: 'Profile updated successfully.', type: 'success' });
+    } catch (err) {
+      setMsg({ text: err.response?.data?.message || 'Failed to update.', type: 'error' });
+    } finally { setLoading(false); }
+  };
+
+  return (
+    <div>
+      <SectionLabel>Profile</SectionLabel>
+      <Alert msg={msg.text} type={msg.type} />
+      <TwoCol>
+        <Field label="Full name" mb={0}><TextInput value={form.name} onChange={e => setForm(p => ({ ...p, name: e.target.value }))} placeholder="Your name" /></Field>
+        <Field label="Email address" mb={0}><TextInput type="email" value={form.email} onChange={e => setForm(p => ({ ...p, email: e.target.value }))} placeholder="you@example.com" /></Field>
+      </TwoCol>
+      <div style={{ marginTop: 16 }}><Btn onClick={save} loading={loading} label="Save changes" /></div>
     </div>
-    <div style={{ padding: 24 }}>{children}</div>
+  );
+};
+
+const PasswordSection = () => {
+  const [form, setForm] = useState({ current: '', new: '', confirm: '' });
+  const [loading, setLoading] = useState(false);
+  const [msg, setMsg] = useState({ text: '', type: '' });
+  const [show, setShow] = useState(false);
+  const t = show ? 'text' : 'password';
+
+  const save = async () => {
+    setMsg({ text: '', type: '' });
+    if (form.new !== form.confirm) return setMsg({ text: 'Passwords do not match.', type: 'error' });
+    if (form.new.length < 8) return setMsg({ text: 'Password must be at least 8 characters.', type: 'error' });
+    setLoading(true);
+    try {
+      await api.patch('/settings/password', { currentPassword: form.current, newPassword: form.new });
+      setMsg({ text: 'Password changed successfully.', type: 'success' });
+      setForm({ current: '', new: '', confirm: '' });
+    } catch (err) {
+      setMsg({ text: err.response?.data?.message || 'Failed to change password.', type: 'error' });
+    } finally { setLoading(false); }
+  };
+
+  return (
+    <div>
+      <SectionLabel>Password</SectionLabel>
+      <Alert msg={msg.text} type={msg.type} />
+      <TwoCol>
+        <Field label="Current password" mb={0}><TextInput type={t} value={form.current} onChange={e => setForm(p => ({ ...p, current: e.target.value }))} placeholder="••••••••" /></Field>
+        <Field label="New password" mb={0}><TextInput type={t} value={form.new} onChange={e => setForm(p => ({ ...p, new: e.target.value }))} placeholder="Min. 8 characters" /></Field>
+      </TwoCol>
+      <Field label="Confirm new password">
+        <TextInput type={t} value={form.confirm} onChange={e => setForm(p => ({ ...p, confirm: e.target.value }))} placeholder="Repeat new password" />
+      </Field>
+      <div style={{ display: 'flex', alignItems: 'center', gap: 16 }}>
+        <Btn onClick={save} loading={loading} label="Update password" />
+        <label style={{ display: 'flex', alignItems: 'center', gap: 6, fontSize: 12, color: 'var(--text-muted)', cursor: 'pointer' }}>
+          <input type="checkbox" checked={show} onChange={e => setShow(e.target.checked)} />
+          Show passwords
+        </label>
+      </div>
+    </div>
+  );
+};
+
+const AppearanceSection = ({ theme, setTheme }) => (
+  <div>
+    <SectionLabel>Appearance</SectionLabel>
+    <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 14 }}>
+      {[
+        { key: 'dark',  label: 'Dark',  desc: 'Default theme',   swatchBg: '#0f1117', dot1: '#2a3047', dot2: '#4f8ef7' },
+        { key: 'light', label: 'Light', desc: 'Clean & minimal', swatchBg: '#f4f6f9', dot1: '#dde2ec', dot2: '#4f8ef7' },
+      ].map(t => (
+        <button key={t.key} onClick={() => setTheme(t.key)} style={{
+          display: 'flex', alignItems: 'center', gap: 16, padding: '14px 18px',
+          borderRadius: 'var(--radius)', cursor: 'pointer', fontFamily: 'var(--font-sans)',
+          border: theme === t.key ? '2px solid var(--accent)' : '1px solid var(--border)',
+          background: theme === t.key ? 'var(--accent-subtle)' : 'var(--bg-surface)',
+          transition: 'all var(--transition)', textAlign: 'left', width: '100%',
+        }}>
+          <div style={{ width: 52, height: 32, borderRadius: 6, background: t.swatchBg, border: `1px solid ${t.dot1}`, flexShrink: 0, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 5 }}>
+            <div style={{ width: 8, height: 8, borderRadius: '50%', background: t.dot1 }} />
+            <div style={{ width: 8, height: 8, borderRadius: '50%', background: t.dot2 }} />
+          </div>
+          <div style={{ flex: 1 }}>
+            <div style={{ fontSize: 13, fontWeight: 500, color: theme === t.key ? 'var(--accent)' : 'var(--text-primary)' }}>{t.label}</div>
+            <div style={{ fontSize: 11, color: 'var(--text-muted)', marginTop: 2 }}>{t.desc}</div>
+          </div>
+          {theme === t.key && (
+            <div style={{ width: 18, height: 18, borderRadius: '50%', background: 'var(--accent)', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
+              <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="#fff" strokeWidth="3"><polyline points="20 6 9 17 4 12" /></svg>
+            </div>
+          )}
+        </button>
+      ))}
+    </div>
   </div>
 );
 
-const Field = ({ label, children, mb = 16 }) => (
-  <div style={{ marginBottom: mb }}><Label>{label}</Label>{children}</div>
-);
+const IntegrationSection = () => {
+  const [keys, setKeys] = useState(null);
+  const [showToken, setShowToken] = useState(false);
+  const token = localStorage.getItem('token');
 
-/* ── Main page ──────────────────────────────────────────────────────────── */
+  useEffect(() => {
+    api.get('/settings/integration').then(r => setKeys(r.data.data.keys)).catch(() => {});
+  }, []);
+
+  return (
+    <div>
+      <SectionLabel>Integration</SectionLabel>
+      <p style={{ fontSize: 13, color: 'var(--text-secondary)', marginBottom: '1.25rem', lineHeight: 1.6 }}>
+        Use these credentials to connect your apps through the proxy. Every request will be automatically logged and tracked.
+      </p>
+
+      <Label>JWT token</Label>
+      <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 8 }}>
+        <div style={{ flex: 1, padding: '10px 14px', background: 'var(--bg-elevated)', border: '1px solid var(--border)', borderRadius: 'var(--radius-sm)', fontFamily: 'var(--font-mono)', fontSize: 12, color: 'var(--text-secondary)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+          {showToken ? token : '•'.repeat(48)}
+        </div>
+        <button onClick={() => setShowToken(p => !p)} style={{ padding: '9px 14px', borderRadius: 'var(--radius-sm)', background: 'transparent', border: '1px solid var(--border)', color: 'var(--text-secondary)', cursor: 'pointer', fontSize: 12, flexShrink: 0, fontFamily: 'var(--font-sans)', whiteSpace: 'nowrap' }}>
+          {showToken ? 'Hide' : 'Reveal'}
+        </button>
+        <CopyBtn text={token} />
+      </div>
+      <p style={{ fontSize: 11, color: 'var(--text-muted)', marginBottom: '1.5rem' }}>
+        Keep private — pass as <code style={{ fontFamily: 'var(--font-mono)', background: 'var(--bg-elevated)', padding: '1px 5px', borderRadius: 3 }}>Authorization: Bearer &lt;token&gt;</code>
+      </p>
+
+      <Label>API key IDs</Label>
+      <div style={{ marginBottom: '1.5rem' }}>
+        {!keys ? (
+          <div style={{ fontSize: 13, color: 'var(--text-muted)' }}>Loading...</div>
+        ) : keys.length === 0 ? (
+          <div style={{ fontSize: 13, color: 'var(--text-muted)' }}>No keys added yet.</div>
+        ) : keys.map(k => (
+          <div key={k._id} style={{ display: 'flex', alignItems: 'center', gap: 12, padding: '11px 14px', background: 'var(--bg-elevated)', border: '1px solid var(--border)', borderRadius: 'var(--radius-sm)', marginBottom: 8 }}>
+            <span style={{ width: 8, height: 8, borderRadius: '50%', background: PROVIDER_COLORS[k.provider] || '#8891aa', flexShrink: 0 }} />
+            <div style={{ flex: 1, minWidth: 0 }}>
+              <div style={{ fontSize: 13, fontWeight: 500 }}>{k.name}</div>
+              <div style={{ fontFamily: 'var(--font-mono)', fontSize: 11, color: 'var(--text-muted)', marginTop: 2, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{k._id}</div>
+            </div>
+            <span style={{ fontSize: 10, fontWeight: 600, padding: '3px 9px', borderRadius: 99, background: k.isActive ? 'var(--success-subtle)' : 'var(--bg-surface)', color: k.isActive ? 'var(--success)' : 'var(--text-muted)', flexShrink: 0 }}>
+              {k.isActive ? 'Active' : 'Inactive'}
+            </span>
+            <CopyBtn text={k._id} />
+          </div>
+        ))}
+      </div>
+
+      <Label>Quick snippet</Label>
+      <pre style={{ background: 'var(--bg-elevated)', border: '1px solid var(--border)', borderRadius: 'var(--radius-sm)', padding: '14px 18px', fontSize: 12, fontFamily: 'var(--font-mono)', color: 'var(--text-secondary)', overflowX: 'auto', lineHeight: 1.8, margin: 0 }}>{`const openai = new OpenAI({
+  baseURL: 'http://localhost:5000/api/proxy/openai',
+  apiKey: 'YOUR_JWT_TOKEN',
+  defaultHeaders: { 'x-api-key-id': 'YOUR_KEY_ID' }
+});`}</pre>
+    </div>
+  );
+};
+
+const ContactSection = () => {
+  const [form, setForm] = useState({ subject: '', message: '' });
+  const [loading, setLoading] = useState(false);
+  const [msg, setMsg] = useState({ text: '', type: '' });
+
+  const send = async () => {
+    if (!form.subject || !form.message) return setMsg({ text: 'Please fill in all fields.', type: 'error' });
+    setLoading(true); setMsg({ text: '', type: '' });
+    await new Promise(r => setTimeout(r, 900));
+    setMsg({ text: "Message sent! We'll get back to you soon.", type: 'success' });
+    setForm({ subject: '', message: '' });
+    setLoading(false);
+  };
+
+  return (
+    <div>
+      <SectionLabel>Contact & support</SectionLabel>
+      <Alert msg={msg.text} type={msg.type} />
+      <Field label="Subject"><TextInput value={form.subject} onChange={e => setForm(p => ({ ...p, subject: e.target.value }))} placeholder="e.g. Feature request, Bug report..." /></Field>
+      <Field label="Message">
+        <textarea value={form.message} onChange={e => setForm(p => ({ ...p, message: e.target.value }))} placeholder="Describe your issue or request in detail..." rows={5}
+          style={{ width: '100%', padding: '9px 12px', boxSizing: 'border-box', background: 'var(--bg-elevated)', border: '1px solid var(--border)', borderRadius: 'var(--radius-sm)', color: 'var(--text-primary)', fontSize: 13, outline: 'none', fontFamily: 'var(--font-sans)', resize: 'vertical', transition: 'border-color var(--transition)' }}
+          onFocus={e => e.target.style.borderColor = 'var(--accent)'}
+          onBlur={e => e.target.style.borderColor = 'var(--border)'}
+        />
+      </Field>
+      <Btn onClick={send} loading={loading} label="Send message" />
+    </div>
+  );
+};
+
+const DangerSection = ({ logout, navigate }) => {
+  const [pw, setPw] = useState('');
+  const [loading, setLoading] = useState(false);
+  const [confirm, setConfirm] = useState(false);
+
+  const del = async () => {
+    setLoading(true);
+    try {
+      await api.delete('/settings/account', { data: { password: pw } });
+      logout(); navigate('/login');
+    } catch (err) {
+      alert(err.response?.data?.message || 'Failed to delete account.');
+      setLoading(false);
+    }
+  };
+
+  return (
+    <div>
+      <SectionLabel danger>Danger zone</SectionLabel>
+      <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', gap: 32, flexWrap: 'wrap' }}>
+        <div style={{ flex: 1 }}>
+          <div style={{ fontSize: 14, fontWeight: 500, marginBottom: 6 }}>Delete account</div>
+          <div style={{ fontSize: 13, color: 'var(--text-muted)', lineHeight: 1.6, maxWidth: 480 }}>
+            Permanently deletes your account, all API keys, and all request logs. This cannot be undone.
+          </div>
+          {confirm && (
+            <div style={{ marginTop: 20, maxWidth: 380 }}>
+              <Field label="Enter your password to confirm">
+                <TextInput type="password" value={pw} onChange={e => setPw(e.target.value)} placeholder="••••••••" />
+              </Field>
+              <div style={{ display: 'flex', gap: 10 }}>
+                <Btn loading={loading} onClick={del} label="Yes, delete my account" variant="danger" disabled={!pw} />
+                <Btn onClick={() => { setConfirm(false); setPw(''); }} label="Cancel" variant="secondary" />
+              </div>
+            </div>
+          )}
+        </div>
+        {!confirm && (
+          <button onClick={() => setConfirm(true)} style={{ padding: '9px 18px', borderRadius: 'var(--radius-sm)', fontSize: 13, fontWeight: 500, background: 'transparent', border: '1px solid var(--error)', color: 'var(--error)', cursor: 'pointer', flexShrink: 0, fontFamily: 'var(--font-sans)', transition: 'all var(--transition)' }}
+            onMouseEnter={e => { e.currentTarget.style.background = 'var(--error)'; e.currentTarget.style.color = '#fff'; }}
+            onMouseLeave={e => { e.currentTarget.style.background = 'transparent'; e.currentTarget.style.color = 'var(--error)'; }}>
+            Delete account
+          </button>
+        )}
+      </div>
+    </div>
+  );
+};
 
 const SettingsPage = () => {
   const { user, logout } = useAuth();
   const navigate = useNavigate();
-  const [active, setActive] = useState('profile');
-  const scrollRef = useRef(null);
-  const sectionRefs = useRef({});
-  const isScrollingRef = useRef(false);
-  const scrollTimerRef = useRef(null);
-
-  // Theme
   const [theme, setTheme] = useState(() => localStorage.getItem('theme') || 'dark');
+
   useEffect(() => {
     const root = document.documentElement;
     const vars = theme === 'light' ? {
@@ -133,316 +355,51 @@ const SettingsPage = () => {
     localStorage.setItem('theme', theme);
   }, [theme]);
 
-  // Integration
-  const [integration, setIntegration] = useState(null);
-  const [showToken, setShowToken] = useState(false);
-  useEffect(() => {
-    api.get('/settings/integration').then(res => setIntegration(res.data.data)).catch(() => {});
-  }, []);
-
-  // Profile
-  const [profileName, setProfileName] = useState(user?.name || '');
-  const [profileLoading, setProfileLoading] = useState(false);
-  const [profileMsg, setProfileMsg] = useState({ text: '', type: '' });
-
-  // Password
-  const [passwords, setPasswords] = useState({ current: '', new: '', confirm: '' });
-  const [passLoading, setPassLoading] = useState(false);
-  const [passMsg, setPassMsg] = useState({ text: '', type: '' });
-  const [showPw, setShowPw] = useState(false);
-
-  // Contact
-  const [contact, setContact] = useState({ subject: '', message: '' });
-  const [contactLoading, setContactLoading] = useState(false);
-  const [contactMsg, setContactMsg] = useState({ text: '', type: '' });
-
-  // Danger
-  const [deletePassword, setDeletePassword] = useState('');
-  const [deleteLoading, setDeleteLoading] = useState(false);
-  const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
-
-  const token = localStorage.getItem('token');
-
-  // Tab click → smooth scroll using getBoundingClientRect (works regardless of DOM nesting)
-  const handleTabClick = (id) => {
-    const el = sectionRefs.current[id];
-    const container = scrollRef.current;
-    if (!el || !container) return;
-
-    setActive(id);
-    isScrollingRef.current = true;
-    clearTimeout(scrollTimerRef.current);
-
-    const elTop = el.getBoundingClientRect().top;
-    const containerTop = container.getBoundingClientRect().top;
-    const scrollTarget = container.scrollTop + (elTop - containerTop) - 16;
-
-    container.scrollTo({ top: scrollTarget, behavior: 'smooth' });
-
-    scrollTimerRef.current = setTimeout(() => { isScrollingRef.current = false; }, 800);
-  };
-
-  // Scroll → update active tab via IntersectionObserver
-  useEffect(() => {
-    const container = scrollRef.current;
-    if (!container) return;
-
-    const observer = new IntersectionObserver(
-      entries => {
-        if (isScrollingRef.current) return;
-        const visible = entries
-          .filter(e => e.isIntersecting)
-          .sort((a, b) => a.boundingClientRect.top - b.boundingClientRect.top);
-        if (visible.length > 0) setActive(visible[0].target.id);
-      },
-      { root: container, rootMargin: '-20% 0px -70% 0px', threshold: 0 }
-    );
-
-    TABS.forEach(({ id }) => {
-      const el = sectionRefs.current[id];
-      if (el) observer.observe(el);
-    });
-
-    return () => observer.disconnect();
-  }, []);
-
-  /* handlers */
-  const handleProfileSave = async () => {
-    setProfileLoading(true); setProfileMsg({ text: '', type: '' });
-    try {
-      await api.patch('/settings/profile', { name: profileName });
-      setProfileMsg({ text: 'Profile updated successfully.', type: 'success' });
-    } catch (err) {
-      setProfileMsg({ text: err.response?.data?.message || 'Failed to update.', type: 'error' });
-    } finally { setProfileLoading(false); }
-  };
-
-  const handlePasswordSave = async () => {
-    setPassMsg({ text: '', type: '' });
-    if (passwords.new !== passwords.confirm) return setPassMsg({ text: 'Passwords do not match.', type: 'error' });
-    setPassLoading(true);
-    try {
-      await api.patch('/settings/password', { currentPassword: passwords.current, newPassword: passwords.new });
-      setPassMsg({ text: 'Password changed successfully.', type: 'success' });
-      setPasswords({ current: '', new: '', confirm: '' });
-    } catch (err) {
-      setPassMsg({ text: err.response?.data?.message || 'Failed to change password.', type: 'error' });
-    } finally { setPassLoading(false); }
-  };
-
-  const handleContactSubmit = async () => {
-    if (!contact.subject || !contact.message) return setContactMsg({ text: 'Please fill in all fields.', type: 'error' });
-    setContactLoading(true); setContactMsg({ text: '', type: '' });
-    await new Promise(r => setTimeout(r, 900));
-    setContactMsg({ text: "Message sent! We'll get back to you soon.", type: 'success' });
-    setContact({ subject: '', message: '' });
-    setContactLoading(false);
-  };
-
-  const handleDeleteAccount = async () => {
-    setDeleteLoading(true);
-    try {
-      await api.delete('/settings/account', { data: { password: deletePassword } });
-      logout(); navigate('/login');
-    } catch (err) {
-      alert(err.response?.data?.message || 'Failed to delete account.');
-      setDeleteLoading(false);
-    }
-  };
-
   return (
-    <div style={{ display: 'flex', flexDirection: 'column', height: '100%', overflow: 'hidden' }}>
-
-      {/* Sticky header */}
-      <div style={{ flexShrink: 0, borderBottom: '1px solid var(--border)', background: 'var(--bg-surface)' }}>
-        <div style={{ padding: '20px 32px 0' }}>
-          <div style={{ fontSize: 16, fontWeight: 600, color: 'var(--text-primary)', marginBottom: 16 }}>Settings</div>
-          <div style={{ display: 'flex', gap: 0, overflowX: 'auto' }}>
-            {TABS.map(tab => {
-              const isActive = active === tab.id;
-              return (
-                <button
-                  key={tab.id}
-                  onClick={() => handleTabClick(tab.id)}
-                  style={{
-                    display: 'inline-flex', alignItems: 'center', gap: 7,
-                    padding: '8px 14px', fontSize: 13, fontWeight: isActive ? 500 : 400,
-                    color: isActive
-                      ? (tab.danger ? 'var(--error)' : 'var(--accent)')
-                      : (tab.danger ? 'rgba(248,113,113,0.7)' : 'var(--text-secondary)'),
-                    background: 'transparent', border: 'none',
-                    borderBottom: isActive
-                      ? `2px solid ${tab.danger ? 'var(--error)' : 'var(--accent)'}`
-                      : '2px solid transparent',
-                    marginBottom: -1, cursor: 'pointer', whiteSpace: 'nowrap',
-                    transition: 'all var(--transition)', fontFamily: 'var(--font-sans)',
-                  }}
-                >
-                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" style={{ flexShrink: 0 }}>
-                    <path d={tab.icon} />
-                  </svg>
-                  {tab.label}
-                </button>
-              );
-            })}
-          </div>
-        </div>
+    <div style={{ minHeight: '100%', background: 'var(--bg)' }}>
+      <div style={{ borderBottom: '1px solid var(--border)', padding: '28px 48px 24px', background: 'var(--bg-surface)' }}>
+        <h1 style={{ fontSize: 22, fontWeight: 600, letterSpacing: '-0.02em', marginBottom: 4 }}>Settings</h1>
+        <p style={{ fontSize: 13, color: 'var(--text-secondary)' }}>Manage your account, preferences, and integrations.</p>
       </div>
 
-      {/* Scrollable content */}
-      <div ref={scrollRef} style={{ flex: 1, overflowY: 'auto', padding: '28px 32px' }}>
-        <div style={{ maxWidth: 680 }}>
+      <div style={{ display: 'grid', gridTemplateColumns: '200px 1fr', minHeight: 'calc(100vh - 89px)' }}>
+        <div style={{ borderRight: '1px solid var(--border)', padding: '32px 0', position: 'sticky', top: 0, height: 'fit-content' }}>
+          {[
+            { label: 'Profile',     href: '#profile'     },
+            { label: 'Password',    href: '#password'    },
+            { label: 'Appearance',  href: '#appearance'  },
+            { label: 'Integration', href: '#integration' },
+            { label: 'Contact',     href: '#contact'     },
+            { label: 'Danger zone', href: '#danger', danger: true },
+          ].map(item => (
+            <a key={item.href} href={item.href} style={{
+              display: 'block', padding: '8px 24px', fontSize: 13,
+              color: item.danger ? 'var(--error)' : 'var(--text-secondary)',
+              textDecoration: 'none', transition: 'color var(--transition)',
+            }}
+              onMouseEnter={e => e.currentTarget.style.color = item.danger ? 'var(--error)' : 'var(--text-primary)'}
+              onMouseLeave={e => e.currentTarget.style.color = item.danger ? 'var(--error)' : 'var(--text-secondary)'}
+            >
+              {item.label}
+            </a>
+          ))}
+        </div>
 
-          {/* Profile */}
-          <SectionCard id="profile" title="Profile" subtitle="Update your display name" sectionRefs={sectionRefs}>
-            <Alert msg={profileMsg.text} type={profileMsg.type} />
-            <Field label="Full name" mb={16}>
-              <TextInput value={profileName} onChange={e => setProfileName(e.target.value)} placeholder="Your name" />
-            </Field>
-            <Field label="Email address" mb={16}>
-              <TextInput value={user?.email || ''} readOnly />
-            </Field>
-            <Btn onClick={handleProfileSave} loading={profileLoading} label="Save changes" />
-          </SectionCard>
-
-          {/* Password */}
-          <SectionCard id="password" title="Change password" subtitle="Use a strong password with at least 8 characters" sectionRefs={sectionRefs}>
-            <Alert msg={passMsg.text} type={passMsg.type} />
-            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 16, marginBottom: 16 }}>
-              <Field label="Current password" mb={0}>
-                <TextInput type={showPw ? 'text' : 'password'} value={passwords.current} onChange={e => setPasswords(p => ({ ...p, current: e.target.value }))} placeholder="••••••••" />
-              </Field>
-              <Field label="New password" mb={0}>
-                <TextInput type={showPw ? 'text' : 'password'} value={passwords.new} onChange={e => setPasswords(p => ({ ...p, new: e.target.value }))} placeholder="Min. 8 characters" />
-              </Field>
-            </div>
-            <Field label="Confirm new password">
-              <TextInput type={showPw ? 'text' : 'password'} value={passwords.confirm} onChange={e => setPasswords(p => ({ ...p, confirm: e.target.value }))} placeholder="Repeat new password" />
-            </Field>
-            <div style={{ display: 'flex', alignItems: 'center', gap: 16 }}>
-              <Btn onClick={handlePasswordSave} loading={passLoading} label="Update password" />
-              <label style={{ display: 'flex', alignItems: 'center', gap: 6, fontSize: 12, color: 'var(--text-muted)', cursor: 'pointer' }}>
-                <input type="checkbox" checked={showPw} onChange={e => setShowPw(e.target.checked)} />
-                Show passwords
-              </label>
-            </div>
-          </SectionCard>
-
-          {/* Appearance */}
-          <SectionCard id="appearance" title="Appearance" subtitle="Choose your preferred color theme" sectionRefs={sectionRefs}>
-            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
-              {[
-                { key: 'dark',  label: 'Dark',  sub: 'Default theme',   preview: ['#0f1117', '#2a3047', '#4f8ef7'] },
-                { key: 'light', label: 'Light', sub: 'Clean & minimal', preview: ['#f4f6f9', '#dde2ec', '#4f8ef7'] },
-              ].map(t => (
-                <button key={t.key} onClick={() => setTheme(t.key)} style={{
-                  display: 'flex', alignItems: 'center', gap: 14, padding: '14px 16px',
-                  borderRadius: 'var(--radius)', cursor: 'pointer', fontFamily: 'var(--font-sans)',
-                  border: theme === t.key ? '2px solid var(--accent)' : '1px solid var(--border)',
-                  background: theme === t.key ? 'var(--accent-subtle)' : 'var(--bg-elevated)',
-                  transition: 'all var(--transition)', textAlign: 'left',
-                }}>
-                  <div style={{ width: 52, height: 34, borderRadius: 6, background: t.preview[0], border: `1px solid ${t.preview[1]}`, flexShrink: 0, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 4, padding: 6 }}>
-                    <div style={{ width: 8, height: 8, borderRadius: '50%', background: t.preview[1] }} />
-                    <div style={{ width: 8, height: 8, borderRadius: '50%', background: t.preview[2] }} />
-                  </div>
-                  <div>
-                    <div style={{ fontSize: 13, fontWeight: 500, color: theme === t.key ? 'var(--accent)' : 'var(--text-primary)' }}>{t.label}</div>
-                    <div style={{ fontSize: 11, color: 'var(--text-muted)', marginTop: 2 }}>{t.sub}</div>
-                  </div>
-                </button>
-              ))}
-            </div>
-          </SectionCard>
-
-          {/* Integration */}
-          <SectionCard id="integration" title="Integration info" subtitle="Use these credentials to connect your apps to the proxy" sectionRefs={sectionRefs}>
-            <Label>JWT token</Label>
-            <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 6 }}>
-              <div style={{ flex: 1, padding: '9px 12px', background: 'var(--bg-elevated)', border: '1px solid var(--border)', borderRadius: 'var(--radius-sm)', fontFamily: 'var(--font-mono)', fontSize: 11, color: 'var(--text-secondary)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
-                {showToken ? token : '••••••••••••••••••••••••••••••••••••••••••••••••'}
-              </div>
-              <button onClick={() => setShowToken(p => !p)} style={{ padding: '8px 12px', borderRadius: 'var(--radius-sm)', background: 'transparent', border: '1px solid var(--border)', color: 'var(--text-secondary)', cursor: 'pointer', fontSize: 12, flexShrink: 0, fontFamily: 'var(--font-sans)' }}>
-                {showToken ? 'Hide' : 'Show'}
-              </button>
-              <CopyBtn text={token} />
-            </div>
-            <div style={{ fontSize: 11, color: 'var(--text-muted)', marginBottom: 20 }}>
-              Keep this private — use as <code style={{ fontFamily: 'var(--font-mono)', background: 'var(--bg-elevated)', padding: '1px 5px', borderRadius: 3 }}>Authorization: Bearer &lt;token&gt;</code>
-            </div>
-            <Label>API key IDs</Label>
-            {!integration ? (
-              <div style={{ fontSize: 13, color: 'var(--text-muted)' }}>Loading...</div>
-            ) : integration.keys.length === 0 ? (
-              <div style={{ fontSize: 13, color: 'var(--text-muted)' }}>No keys added yet.</div>
-            ) : integration.keys.map(k => (
-              <div key={k._id} style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '10px 14px', background: 'var(--bg-elevated)', border: '1px solid var(--border)', borderRadius: 'var(--radius-sm)', marginBottom: 8 }}>
-                <span style={{ width: 8, height: 8, borderRadius: '50%', background: PROVIDER_COLORS[k.provider] || '#8891aa', flexShrink: 0 }} />
-                <div style={{ flex: 1, minWidth: 0 }}>
-                  <div style={{ fontSize: 13, fontWeight: 500 }}>{k.name}</div>
-                  <div style={{ fontFamily: 'var(--font-mono)', fontSize: 11, color: 'var(--text-muted)', marginTop: 1, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{k._id}</div>
-                </div>
-                <span style={{ fontSize: 10, fontWeight: 600, padding: '2px 8px', borderRadius: 99, background: k.isActive ? 'var(--success-subtle)' : 'var(--bg-surface)', color: k.isActive ? 'var(--success)' : 'var(--text-muted)', flexShrink: 0 }}>
-                  {k.isActive ? 'Active' : 'Inactive'}
-                </span>
-                <CopyBtn text={k._id} />
-              </div>
-            ))}
-            <div style={{ marginTop: 20 }}>
-              <Label>Quick integration snippet</Label>
-              <pre style={{ background: 'var(--bg-elevated)', border: '1px solid var(--border)', borderRadius: 'var(--radius-sm)', padding: '14px 16px', fontSize: 11, fontFamily: 'var(--font-mono)', color: 'var(--text-secondary)', overflowX: 'auto', lineHeight: 1.8, margin: 0 }}>{`const openai = new OpenAI({
-  baseURL: 'http://localhost:5000/api/proxy/openai',
-  apiKey: 'YOUR_JWT_TOKEN',
-  defaultHeaders: {
-    'x-api-key-id': 'YOUR_OPENAI_KEY_ID'
-  }
-});`}</pre>
-            </div>
-          </SectionCard>
-
-          {/* Contact */}
-          <SectionCard id="contact" title="Contact & support" subtitle="Send us a message and we'll get back to you" sectionRefs={sectionRefs}>
-            <Alert msg={contactMsg.text} type={contactMsg.type} />
-            <Field label="Subject">
-              <TextInput value={contact.subject} onChange={e => setContact(p => ({ ...p, subject: e.target.value }))} placeholder="e.g. Feature request, Bug report..." />
-            </Field>
-            <Field label="Message">
-              <textarea value={contact.message} onChange={e => setContact(p => ({ ...p, message: e.target.value }))} placeholder="Describe your issue or request in detail..." rows={4}
-                style={{ width: '100%', padding: '9px 12px', boxSizing: 'border-box', background: 'var(--bg-elevated)', border: '1px solid var(--border)', borderRadius: 'var(--radius-sm)', color: 'var(--text-primary)', fontSize: 13, outline: 'none', fontFamily: 'var(--font-sans)', resize: 'vertical', transition: 'border-color var(--transition)' }}
-                onFocus={e => e.target.style.borderColor = 'var(--accent)'}
-                onBlur={e => e.target.style.borderColor = 'var(--border)'}
-              />
-            </Field>
-            <Btn onClick={handleContactSubmit} loading={contactLoading} label="Send message" />
-          </SectionCard>
-
-          {/* Danger */}
-          <SectionCard id="danger" title="Danger zone" subtitle="Irreversible actions — proceed with caution" danger sectionRefs={sectionRefs}>
-            {!showDeleteConfirm ? (
-              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 20, flexWrap: 'wrap' }}>
-                <div>
-                  <div style={{ fontSize: 13, fontWeight: 500, marginBottom: 4 }}>Delete account</div>
-                  <div style={{ fontSize: 12, color: 'var(--text-muted)', maxWidth: 400 }}>Permanently deletes your account, all API keys, and all request logs. Cannot be undone.</div>
-                </div>
-                <Btn onClick={() => setShowDeleteConfirm(true)} label="Delete account" variant="danger" />
-              </div>
-            ) : (
-              <div>
-                <div style={{ fontSize: 13, color: 'var(--error)', marginBottom: 16, fontWeight: 500 }}>Are you sure? This action is irreversible.</div>
-                <Field label="Enter your password to confirm">
-                  <TextInput type="password" value={deletePassword} onChange={e => setDeletePassword(e.target.value)} placeholder="••••••••" />
-                </Field>
-                <div style={{ display: 'flex', gap: 10 }}>
-                  <Btn loading={deleteLoading} onClick={handleDeleteAccount} label="Yes, delete my account" variant="danger" disabled={!deletePassword} />
-                  <Btn onClick={() => { setShowDeleteConfirm(false); setDeletePassword(''); }} label="Cancel" variant="secondary" />
-                </div>
-              </div>
-            )}
-          </SectionCard>
-
+        <div style={{ padding: '40px 56px', maxWidth: 780 }}>
+          <div id="profile"><ProfileSection /></div>
+          <Divider />
+          <div id="password"><PasswordSection /></div>
+          <Divider />
+          <div id="appearance"><AppearanceSection theme={theme} setTheme={setTheme} /></div>
+          <Divider />
+          <div id="integration"><IntegrationSection /></div>
+          <Divider />
+          <div id="contact"><ContactSection /></div>
+          <Divider />
+          <div id="danger"><DangerSection logout={logout} navigate={navigate} /></div>
+          <div style={{ height: 60 }} />
         </div>
       </div>
-
       <style>{`@keyframes spin { to { transform: rotate(360deg); } }`}</style>
     </div>
   );

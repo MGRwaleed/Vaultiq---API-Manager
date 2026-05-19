@@ -30,7 +30,7 @@ export const proxyRequest = async (req, res) => {
     return res.status(403).json({ success: false, message: 'This API key is inactive. Enable it first.' });
   }
 
-  const upstreamPath = '/' + (req.params[0] || '');
+  const upstreamPath = req.path.replace(`/${providerKey}`, '');
   const upstreamUrl  = `${provider.baseUrl}${upstreamPath}`;
   const rawKey       = apiKeyDoc.decryptKey();
   const authValue    = provider.authPrefix ? `${provider.authPrefix} ${rawKey}` : rawKey;

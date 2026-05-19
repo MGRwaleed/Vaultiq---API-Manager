@@ -66,6 +66,17 @@ export const PROVIDERS = {
       default:            { input: 0.000007,    output: 0.000021  },
     },
   },
+  deepseek: {
+  name: 'Deepseek',
+  baseUrl: 'https://api.deepseek.com',
+  authHeader: 'Authorization',
+  authPrefix: 'Bearer',
+  costPerToken: {
+    'deepseek-chat':    { input: 0.00000027, output: 0.0000011  },
+    'deepseek-reasoner': { input: 0.00000055, output: 0.00000219 },
+    default:            { input: 0.00000027, output: 0.0000011  },
+  },
+},
 };
 
 export const estimateCost = (providerKey, modelName, usage) => {

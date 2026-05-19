@@ -11,10 +11,10 @@ const PROVIDER_COLORS = {
   OpenAI:    '#10a37f',
   Groq:      '#f55036',
   Tavily:    '#6366f1',
-  Deepgram:  '#13ef95',
+  Deepgram:  '#ec4899',
+  Deepseek:  '#00c2ff',
   Anthropic: '#c96442',
-  Gemini:    '#f59e0b',
-  Deepseek:  '#14b8a6'
+  Gemini:    '#f59e0b'
 };
 
 const CHART_STYLE = {

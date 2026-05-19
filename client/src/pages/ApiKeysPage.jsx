@@ -1,15 +1,16 @@
 import { useState, useEffect, useCallback } from 'react';
 import api from '../lib/api';
 
-const PROVIDERS = ['Anthropic', 'OpenAI', 'Groq', 'Tavily', 'Deepgram', 'Other'];
+const PROVIDERS = ['Anthropic', 'OpenAI', 'Groq', 'Tavily', 'Deepgram', 'Deepseek', 'Other'];
 
 const PROVIDER_COLORS = {
   Anthropic: '#c96442',
   OpenAI:    '#10a37f',
   Groq:      '#f55036',
   Tavily:    '#6366f1',
-  Deepgram:  '#13ef95',
-  Other:    '#f59e0b',
+  Deepgram:  '#ec4899',
+  Deepseek:  '#00c2ff',
+  Other:     '#f59e0b',
 
 };
 
