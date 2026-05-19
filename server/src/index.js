@@ -13,6 +13,7 @@ import usageRoutes from './routes/usage.js';
 import logsRoutes from './routes/logs.js';
 import proxyRoutes from './routes/proxy.js';
 import settingsRoutes from './routes/settings.js';
+import healthRoutes from './routes/health.js';
 
 connectDB();
 
@@ -45,6 +46,7 @@ app.use('/api/usage', usageRoutes);
 app.use('/api/logs', logsRoutes);
 app.use('/api/proxy', proxyRoutes);
 app.use('/api/settings', settingsRoutes);
+app.use('/api/health', healthRoutes);
 
 app.get('/health', (_, res) => res.json({ status: 'ok', timestamp: new Date() }));
 

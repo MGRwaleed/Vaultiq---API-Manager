@@ -9,6 +9,7 @@ import UsagePage from './pages/UsagePage';
 import LogsPage from './pages/LogsPage';
 import SettingsPage from './pages/SettingsPage';
 import ComingSoon from './pages/ComingSoon';
+import HealthPage from './pages/HealthPage';
 
 const App = () => (
   <BrowserRouter>
@@ -20,9 +21,9 @@ const App = () => (
         <Route path="/dashboard" element={<ProtectedRoute><AppLayout><Dashboard /></AppLayout></ProtectedRoute>} />
         <Route path="/keys"      element={<ProtectedRoute><AppLayout><ApiKeysPage /></AppLayout></ProtectedRoute>} />
         <Route path="/usage"     element={<ProtectedRoute><AppLayout><UsagePage /></AppLayout></ProtectedRoute>} />
-        <Route path="/logs" element={<ProtectedRoute><AppLayout><LogsPage /></AppLayout></ProtectedRoute>} />
-        <Route path="/health"    element={<ProtectedRoute><AppLayout><ComingSoon title="Key Health Checks" /></AppLayout></ProtectedRoute>} />
-        <Route path="/settings" element={<ProtectedRoute><AppLayout><SettingsPage /></AppLayout></ProtectedRoute>} />
+        <Route path="/logs"      element={<ProtectedRoute><AppLayout><LogsPage /></AppLayout></ProtectedRoute>} />
+        <Route path="/health"    element={<ProtectedRoute><AppLayout><HealthPage /></AppLayout></ProtectedRoute>} />
+        <Route path="/settings"  element={<ProtectedRoute><AppLayout><SettingsPage /></AppLayout></ProtectedRoute>} />
 
         <Route path="*" element={<Navigate to="/dashboard" replace />} />
       </Routes>
