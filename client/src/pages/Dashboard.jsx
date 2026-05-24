@@ -2,287 +2,204 @@ import { useEffect, useState } from 'react';
 import { useAuth } from '../context/AuthContext';
 import api from '../lib/api';
 
-/* ── Tiny sparkline using SVG ─────────────────────────────────── */
-const Sparkline = ({ data, color = 'var(--accent)', height = 40 }) => {
-  if (!data || data.length < 2) return null;
-  const max = Math.max(...data);
-  const min = Math.min(...data);
-  const w = 120, h = height;
-  const points = data
-    .map((v, i) => {
-      const x = (i / (data.length - 1)) * w;
-      const y = h - ((v - min) / (max - min || 1)) * h;
-      return `${x},${y}`;
-    })
-    .join(' ');
-  return (
-    <svg width={w} height={h} style={{ display: 'block' }}>
-      <polyline points={points} fill="none" stroke={color} strokeWidth="1.5" strokeLinejoin="round" />
-    </svg>
-  );
-};
-
-/* ── Stat Card ────────────────────────────────────────────────── */
-const StatCard = ({ icon, label, value, sub, sparkData, sparkColor, trend, loading }) => (
+const KpiCard = ({ label, value, sub, trend, color = 'var(--primary)', loading }) => (
   <div style={{
-    background: 'var(--bg-surface)',
-    border: '1px solid var(--border)',
-    borderRadius: 'var(--radius)',
-    padding: 20,
-    display: 'flex', flexDirection: 'column', gap: 12,
-  }}>
-    <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between' }}>
-      <div>
-        <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 8 }}>
-          <span style={{ color: 'var(--text-muted)' }}>{icon}</span>
-          <span style={{ fontSize: 12, color: 'var(--text-secondary)', fontWeight: 500, letterSpacing: '0.03em' }}>
-            {label}
-          </span>
-        </div>
-        {loading ? (
-          <div style={{ width: 80, height: 28, background: 'var(--bg-elevated)', borderRadius: 4, animation: 'pulse 1.4s ease-in-out infinite' }} />
-        ) : (
-          <div style={{ fontSize: 26, fontWeight: 600, letterSpacing: '-0.02em', lineHeight: 1 }}>
-            {value}
-          </div>
-        )}
-        {sub && <div style={{ fontSize: 12, color: 'var(--text-muted)', marginTop: 5 }}>{sub}</div>}
-      </div>
-      {sparkData && !loading && (
-        <div style={{ opacity: 0.7 }}>
-          <Sparkline data={sparkData} color={sparkColor} />
-        </div>
-      )}
+    background: 'var(--surface-bright)', borderRadius: 12,
+    border: '1px solid var(--outline-variant)', padding: '20px 24px',
+    display: 'flex', flexDirection: 'column', justifyContent: 'space-between',
+    boxShadow: 'var(--shadow-sm)', transition: 'border-color var(--transition)',
+    cursor: 'default',
+  }}
+    onMouseEnter={e => e.currentTarget.style.borderColor = 'var(--primary)'}
+    onMouseLeave={e => e.currentTarget.style.borderColor = 'var(--outline-variant)'}
+  >
+    <div>
+      <p style={{ fontSize: 11, fontWeight: 500, color: 'var(--on-surface-variant)', textTransform: 'uppercase', letterSpacing: '0.06em', marginBottom: 10, fontFamily: 'var(--font-mono)' }}>{label}</p>
+      {loading
+        ? <div className="skeleton" style={{ width: 80, height: 36, borderRadius: 6 }} />
+        : <h3 style={{ fontSize: 32, fontWeight: 700, color: 'var(--on-surface)', letterSpacing: '-0.02em', lineHeight: 1 }}>{value}</h3>
+      }
     </div>
     {trend && !loading && (
-      <div style={{
-        fontSize: 11, display: 'flex', alignItems: 'center', gap: 4,
-        color: trend.direction === 'up' ? 'var(--success)' : trend.direction === 'down' ? 'var(--error)' : 'var(--text-muted)',
-      }}>
-        {trend.direction === 'up' ? '↑' : trend.direction === 'down' ? '↓' : '–'}
-        {trend.label}
+      <div style={{ marginTop: 14, display: 'flex', alignItems: 'center', gap: 5, fontSize: 11, color: trend.positive ? 'var(--success-color)' : trend.neutral ? 'var(--on-surface-variant)' : 'var(--error)' }}>
+        <span>{trend.positive ? '↑' : trend.neutral ? '—' : '↓'}</span>
+        <span>{trend.label}</span>
       </div>
     )}
   </div>
 );
 
-/* ── Status Badge ─────────────────────────────────────────────── */
-const StatusBadge = ({ status }) => {
-  const colors = {
-    healthy: { bg: 'var(--success-subtle)', text: 'var(--success)', dot: 'var(--success)' },
-    warning: { bg: 'var(--warning-subtle)', text: 'var(--warning)', dot: 'var(--warning)' },
-    error:   { bg: 'var(--error-subtle)',   text: 'var(--error)',   dot: 'var(--error)' },
-  };
-  const c = colors[status] || colors.healthy;
-  return (
-    <span style={{
-      display: 'inline-flex', alignItems: 'center', gap: 5,
-      padding: '3px 8px', borderRadius: 99,
-      background: c.bg, color: c.text, fontSize: 11, fontWeight: 500,
-    }}>
-      <span style={{ width: 5, height: 5, borderRadius: '50%', background: c.dot, display: 'inline-block' }} />
-      {status}
-    </span>
-  );
+const StatusDot = ({ status }) => {
+  const color = status === 'healthy' ? '#4ade80' : status === 'warning' ? '#facc15' : '#f87171';
+  return <span style={{ width: 7, height: 7, borderRadius: '50%', background: color, display: 'inline-block', flexShrink: 0 }} />;
 };
 
-/* ── Provider icons via initial letters ───────────────────────── */
-const ProviderIcon = ({ name }) => (
-  <div style={{
-    width: 32, height: 32, borderRadius: 8, flexShrink: 0,
-    background: 'var(--bg-elevated)',
-    border: '1px solid var(--border)',
-    display: 'flex', alignItems: 'center', justifyContent: 'center',
-    fontSize: 12, fontWeight: 700, color: 'var(--text-secondary)',
-    fontFamily: 'var(--font-mono)',
-  }}>
-    {name[0]}
-  </div>
-);
-
-/* ── Relative time helper ─────────────────────────────────────── */
-const relTime = (ts) => {
-  const diff = Math.floor((Date.now() - new Date(ts)) / 1000);
-  if (diff < 60) return `${diff}s ago`;
-  if (diff < 3600) return `${Math.floor(diff / 60)}m ago`;
-  return `${Math.floor(diff / 3600)}h ago`;
-};
-
-/* ── Dashboard Page ───────────────────────────────────────────── */
 const Dashboard = () => {
   const { user } = useAuth();
   const [stats, setStats] = useState(null);
   const [loading, setLoading] = useState(true);
-  const [error, setError] = useState('');
 
   useEffect(() => {
-    api.get('/dashboard/stats')
-      .then(res => setStats(res.data.data))
-      .catch(() => setError('Failed to load dashboard data.'))
-      .finally(() => setLoading(false));
+    api.get('/dashboard/stats').then(r => setStats(r.data.data)).finally(() => setLoading(false));
   }, []);
+
+  const relTime = ts => {
+    const d = Math.floor((Date.now() - new Date(ts)) / 1000);
+    if (d < 60) return `${d}s ago`;
+    if (d < 3600) return `${Math.floor(d/60)}m ago`;
+    return `${Math.floor(d/3600)}h ago`;
+  };
 
   const greeting = () => {
     const h = new Date().getHours();
-    if (h < 12) return 'Good morning';
-    if (h < 18) return 'Good afternoon';
-    return 'Good evening';
+    return h < 12 ? 'Good morning' : h < 18 ? 'Good afternoon' : 'Good evening';
   };
 
   return (
-    <div style={{ padding: 32, maxWidth: 1100 }}>
+    <div style={{ maxWidth: 1200 }}>
       {/* Header */}
-      <div style={{ marginBottom: 32 }}>
-        <h1 style={{ fontSize: 22, fontWeight: 600, letterSpacing: '-0.02em', marginBottom: 4 }}>
-          {greeting()}, {user?.name?.split(' ')[0]} 👋
-        </h1>
-        <p style={{ color: 'var(--text-secondary)', fontSize: 13 }}>
-          Here's an overview of your API usage. All times in UTC.
-        </p>
-      </div>
-
-      {error && (
-        <div style={{
-          padding: '12px 16px', borderRadius: 'var(--radius-sm)',
-          background: 'var(--error-subtle)', border: '1px solid rgba(248,113,113,0.3)',
-          color: 'var(--error)', fontSize: 13, marginBottom: 24,
-        }}>
-          {error}
+      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 28, flexWrap: 'wrap', gap: 12 }}>
+        <div>
+          <h2 style={{ fontSize: 22, fontWeight: 700, color: 'var(--on-surface)', marginBottom: 4, letterSpacing: '-0.01em' }}>
+            {greeting()}, {user?.name?.split(' ')[0]} 👋
+          </h2>
+          <p style={{ color: 'var(--on-surface-variant)', fontSize: 13 }}>Real-time performance metrics across your API fleet.</p>
         </div>
-      )}
-
-      {/* Stat Cards */}
-      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(240px, 1fr))', gap: 16, marginBottom: 32 }}>
-        <StatCard
-          loading={loading}
-          icon={<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8"><path d="M15 7h3a5 5 0 0 1 5 5 5 5 0 0 1-5 5h-3m-6 0H6a5 5 0 0 1-5-5 5 5 0 0 1 5-5h3"/><line x1="8" y1="12" x2="16" y2="12"/></svg>}
-          label="Total APIs Added"
-          value={stats?.totalApis ?? '—'}
-          sub={`${stats?.activeKeys ?? '—'} active`}
-          trend={{ direction: 'up', label: '+1 this week' }}
-        />
-        <StatCard
-          loading={loading}
-          icon={<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg>}
-          label="Total Requests Today"
-          value={stats?.totalRequestsToday?.toLocaleString() ?? '—'}
-          sub="across all APIs"
-          sparkData={stats?.requestsOverWeek}
-          sparkColor="var(--accent)"
-          trend={{ direction: 'up', label: '+23% vs yesterday' }}
-        />
-        <StatCard
-          loading={loading}
-          icon={<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8"><line x1="12" y1="1" x2="12" y2="23"/><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg>}
-          label="Est. Cost This Month"
-          value={stats ? `$${stats.estimatedCostThisMonth.toFixed(2)}` : '—'}
-          sub="OpenAI accounts for 57%"
-          sparkData={stats?.costOverWeek}
-          sparkColor="var(--warning)"
-          trend={{ direction: 'up', label: '+$4.10 this week' }}
-        />
-        <StatCard
-          loading={loading}
-          icon={<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg>}
-          label="Active Keys"
-          value={stats?.activeKeys ?? '—'}
-          sub={`of ${stats?.totalApis ?? '—'} total`}
-          trend={{ direction: 'neutral', label: '1 key needs attention' }}
-        />
+        <div style={{ display: 'flex', alignItems: 'center', gap: 8, background: 'var(--surface-bright)', border: '1px solid var(--outline-variant)', borderRadius: 8, padding: '7px 14px', fontSize: 13, color: 'var(--on-surface-variant)', boxShadow: 'var(--shadow-sm)', cursor: 'pointer' }}>
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
+          Last 30 days
+          <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><polyline points="6 9 12 15 18 9"/></svg>
+        </div>
       </div>
 
-      {/* Lower section: Top APIs + Recent Logs */}
-      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 20 }}>
+      {/* KPI Grid */}
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 16, marginBottom: 24 }}>
+        <KpiCard label="Total APIs" value={stats?.totalApis ?? '—'} sub="keys added" trend={{ label: `${stats?.activeKeys ?? 0} active`, neutral: true }} loading={loading} />
+        <KpiCard label="Requests Today" value={stats?.totalRequestsToday?.toLocaleString() ?? '—'} trend={{ label: '+23% vs yesterday', positive: true }} loading={loading} />
+        <KpiCard label="Est. Cost / Month" value={stats ? `$${stats.estimatedCostThisMonth?.toFixed(2)}` : '—'} trend={{ label: 'this month', neutral: true }} loading={loading} />
+        <KpiCard label="Error Rate" value={stats ? `${stats.errorRate ?? 0}%` : '—'} trend={{ label: stats?.errorRate > 5 ? 'above threshold' : 'within range', positive: stats?.errorRate <= 5 }} loading={loading} />
+      </div>
 
+      {/* Main bento grid */}
+      <div style={{ display: 'grid', gridTemplateColumns: '2fr 1fr', gap: 16, marginBottom: 16 }}>
         {/* Top APIs */}
-        <div style={{
-          background: 'var(--bg-surface)', border: '1px solid var(--border)',
-          borderRadius: 'var(--radius)', overflow: 'hidden',
-        }}>
-          <div style={{ padding: '16px 20px', borderBottom: '1px solid var(--border)', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-            <span style={{ fontSize: 13, fontWeight: 600 }}>Top APIs</span>
-            <span style={{ fontSize: 11, color: 'var(--text-muted)' }}>by requests today</span>
+        <div style={{ background: 'var(--surface-bright)', border: '1px solid var(--outline-variant)', borderRadius: 12, overflow: 'hidden', boxShadow: 'var(--shadow-sm)' }}>
+          <div style={{ padding: '16px 24px', borderBottom: '1px solid var(--outline-variant)', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+            <h4 style={{ fontSize: 15, fontWeight: 600 }}>Top APIs</h4>
+            <span style={{ fontSize: 11, color: 'var(--on-surface-variant)', fontFamily: 'var(--font-mono)' }}>by requests this month</span>
           </div>
-          <div style={{ padding: '8px 0' }}>
-            {loading ? (
-              [1,2,3,4].map(i => (
-                <div key={i} style={{ padding: '10px 20px', display: 'flex', gap: 12, alignItems: 'center' }}>
-                  <div style={{ width: 32, height: 32, borderRadius: 8, background: 'var(--bg-elevated)', animation: 'pulse 1.4s ease-in-out infinite' }} />
-                  <div style={{ flex: 1 }}>
-                    <div style={{ width: 80, height: 12, background: 'var(--bg-elevated)', borderRadius: 4, marginBottom: 6, animation: 'pulse 1.4s ease-in-out infinite' }} />
-                    <div style={{ width: 120, height: 10, background: 'var(--bg-elevated)', borderRadius: 4, animation: 'pulse 1.4s ease-in-out infinite' }} />
-                  </div>
-                </div>
-              ))
-            ) : stats?.topApis?.map(api => (
-              <div key={api.name} style={{
-                padding: '10px 20px', display: 'flex', alignItems: 'center', gap: 12,
-                borderBottom: '1px solid var(--border)',
-              }}>
-                <ProviderIcon name={api.name} />
-                <div style={{ flex: 1, minWidth: 0 }}>
-                  <div style={{ fontSize: 13, fontWeight: 500, marginBottom: 2 }}>{api.name}</div>
-                  <div style={{ fontSize: 11, color: 'var(--text-muted)', fontFamily: 'var(--font-mono)' }}>
-                    {api.requests.toLocaleString()} req · ${api.cost.toFixed(2)}
-                  </div>
-                </div>
-                <StatusBadge status={api.status} />
-              </div>
-            ))}
-          </div>
+          {loading ? (
+            <div style={{ padding: 24 }}>
+              {[1,2,3,4].map(i => <div key={i} className="skeleton" style={{ height: 44, marginBottom: 8, borderRadius: 8 }} />)}
+            </div>
+          ) : stats?.topApis?.length === 0 ? (
+            <div style={{ padding: 48, textAlign: 'center', color: 'var(--on-surface-variant)', fontSize: 13 }}>No data yet — make some API calls through the proxy.</div>
+          ) : (
+            <table style={{ width: '100%', borderCollapse: 'collapse' }}>
+              <thead>
+                <tr style={{ background: 'var(--surface-container-low)' }}>
+                  {['Provider', 'Requests', 'Cost', 'Status'].map(h => (
+                    <th key={h} style={{ padding: '9px 24px', textAlign: 'left', fontSize: 11, fontWeight: 500, color: 'var(--on-surface-variant)', textTransform: 'uppercase', letterSpacing: '0.06em' }}>{h}</th>
+                  ))}
+                </tr>
+              </thead>
+              <tbody>
+                {stats?.topApis?.map(a => (
+                  <tr key={a.name} style={{ borderTop: '1px solid var(--outline-variant)' }}>
+                    <td style={{ padding: '13px 24px', fontSize: 13, fontWeight: 600 }}>{a.name}</td>
+                    <td style={{ padding: '13px 24px', fontFamily: 'var(--font-mono)', fontSize: 12, color: 'var(--on-surface-variant)' }}>{a.requests.toLocaleString()}</td>
+                    <td style={{ padding: '13px 24px', fontFamily: 'var(--font-mono)', fontSize: 12, color: 'var(--on-surface-variant)' }}>${a.cost.toFixed(4)}</td>
+                    <td style={{ padding: '13px 24px' }}>
+                      <span style={{ display: 'inline-flex', alignItems: 'center', gap: 6, padding: '3px 10px', borderRadius: 99, fontSize: 11, fontWeight: 500, background: a.status === 'healthy' ? 'var(--success-bg)' : 'var(--warning-bg)', color: a.status === 'healthy' ? 'var(--success-color)' : 'var(--warning-color)', border: `1px solid ${a.status === 'healthy' ? 'var(--success-border)' : 'var(--warning-border)'}` }}>
+                        <StatusDot status={a.status} />{a.status}
+                      </span>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          )}
         </div>
 
-        {/* Recent Logs */}
-        <div style={{
-          background: 'var(--bg-surface)', border: '1px solid var(--border)',
-          borderRadius: 'var(--radius)', overflow: 'hidden',
-        }}>
-          <div style={{ padding: '16px 20px', borderBottom: '1px solid var(--border)', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-            <span style={{ fontSize: 13, fontWeight: 600 }}>Recent Logs</span>
-            <span style={{ fontSize: 11, color: 'var(--text-muted)' }}>last 5 requests</span>
+        {/* System Health */}
+        <div style={{ background: 'var(--inverse-surface)', borderRadius: 12, padding: 24, display: 'flex', flexDirection: 'column', justifyContent: 'space-between', overflow: 'hidden', position: 'relative', boxShadow: 'var(--shadow-sm)' }}>
+          <div style={{ position: 'relative', zIndex: 1 }}>
+            <h4 style={{ fontSize: 15, fontWeight: 600, color: 'var(--inverse-on-surface)', marginBottom: 20 }}>System Health</h4>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
+              {[
+                { label: 'Proxy Server',  value: 'Online',     ok: true  },
+                { label: 'Database',      value: 'Connected',  ok: true  },
+                { label: 'Active Keys',   value: `${stats?.activeKeys ?? '—'} / ${stats?.totalApis ?? '—'}`, ok: true },
+                { label: 'Error Rate',    value: `${stats?.errorRate ?? 0}%`, ok: (stats?.errorRate ?? 0) < 5 },
+              ].map(item => (
+                <div key={item.label} style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+                  <span style={{ fontSize: 13, color: 'rgba(238,240,255,0.7)' }}>{item.label}</span>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+                    <span style={{ width: 6, height: 6, borderRadius: '50%', background: item.ok ? '#4ade80' : '#f87171' }} />
+                    <span style={{ fontSize: 12, color: 'var(--inverse-on-surface)', fontFamily: 'var(--font-mono)' }}>{item.value}</span>
+                  </div>
+                </div>
+              ))}
+            </div>
           </div>
-          <div style={{ padding: '8px 0' }}>
-            {loading ? (
-              [1,2,3,4,5].map(i => (
-                <div key={i} style={{ padding: '10px 20px' }}>
-                  <div style={{ width: '100%', height: 12, background: 'var(--bg-elevated)', borderRadius: 4, marginBottom: 6, animation: 'pulse 1.4s ease-in-out infinite' }} />
-                </div>
-              ))
-            ) : stats?.recentLogs?.map(log => {
-              const statusColor = log.status < 300 ? 'var(--success)' : log.status < 500 ? 'var(--warning)' : 'var(--error)';
-              return (
-                <div key={log.id} style={{
-                  padding: '10px 20px', borderBottom: '1px solid var(--border)',
-                  display: 'flex', alignItems: 'center', gap: 12,
-                }}>
-                  <span style={{
-                    fontSize: 11, fontWeight: 700, fontFamily: 'var(--font-mono)',
-                    color: statusColor, minWidth: 30,
-                  }}>
-                    {log.status}
-                  </span>
-                  <div style={{ flex: 1, minWidth: 0 }}>
-                    <div style={{ fontSize: 12, fontFamily: 'var(--font-mono)', color: 'var(--text-secondary)', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
-                      {log.api} · {log.endpoint}
-                    </div>
-                  </div>
-                  <div style={{ fontSize: 11, color: 'var(--text-muted)', textAlign: 'right', flexShrink: 0 }}>
-                    <div style={{ fontFamily: 'var(--font-mono)' }}>{log.latency}ms</div>
-                    <div>{relTime(log.timestamp)}</div>
-                  </div>
-                </div>
-              );
-            })}
+          <div style={{ position: 'relative', zIndex: 1, marginTop: 24 }}>
+            <div style={{ background: 'rgba(255,255,255,0.08)', borderRadius: 8, padding: '12px 14px' }}>
+              <p style={{ fontSize: 11, color: 'rgba(238,240,255,0.5)', marginBottom: 3, fontFamily: 'var(--font-mono)' }}>Total requests this month</p>
+              <p style={{ fontSize: 18, fontWeight: 700, color: 'var(--inverse-on-surface)', fontFamily: 'var(--font-mono)' }}>
+                {stats?.totalRequestsToday?.toLocaleString() ?? '—'}
+              </p>
+            </div>
+          </div>
+          {/* Decorative */}
+          <div style={{ position: 'absolute', right: -40, bottom: -40, opacity: 0.06 }}>
+            <svg width="200" height="200" viewBox="0 0 24 24" fill="white"><circle cx="12" cy="12" r="10"/></svg>
           </div>
         </div>
       </div>
 
-      <style>{`
-        @keyframes pulse {
-          0%, 100% { opacity: 1; }
-          50% { opacity: 0.4; }
-        }
-      `}</style>
+      {/* Recent Logs */}
+      <div style={{ background: 'var(--surface-bright)', border: '1px solid var(--outline-variant)', borderRadius: 12, overflow: 'hidden', boxShadow: 'var(--shadow-sm)' }}>
+        <div style={{ padding: '16px 24px', borderBottom: '1px solid var(--outline-variant)', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+          <h4 style={{ fontSize: 15, fontWeight: 600 }}>Recent Requests</h4>
+          <a href="/logs" style={{ fontSize: 12, color: 'var(--primary)', fontWeight: 500 }}>View all →</a>
+        </div>
+        {loading ? (
+          <div style={{ padding: 24 }}>
+            {[1,2,3,4,5].map(i => <div key={i} className="skeleton" style={{ height: 36, marginBottom: 8, borderRadius: 6 }} />)}
+          </div>
+        ) : stats?.recentLogs?.length === 0 ? (
+          <div style={{ padding: 40, textAlign: 'center', color: 'var(--on-surface-variant)', fontSize: 13 }}>No requests logged yet.</div>
+        ) : (
+          <table style={{ width: '100%', borderCollapse: 'collapse' }}>
+            <thead>
+              <tr style={{ background: 'var(--surface-container-low)' }}>
+                {['Status', 'API', 'Endpoint', 'Latency', 'Time'].map(h => (
+                  <th key={h} style={{ padding: '9px 24px', textAlign: 'left', fontSize: 11, fontWeight: 500, color: 'var(--on-surface-variant)', textTransform: 'uppercase', letterSpacing: '0.06em' }}>{h}</th>
+                ))}
+              </tr>
+            </thead>
+            <tbody>
+              {stats?.recentLogs?.map((log, i) => {
+                const ok = log.status < 300;
+                const warn = log.status < 500;
+                return (
+                  <tr key={i} style={{ borderTop: '1px solid var(--outline-variant)' }}>
+                    <td style={{ padding: '12px 24px' }}>
+                      <span style={{ display: 'inline-block', padding: '2px 8px', borderRadius: 4, fontSize: 11, fontWeight: 700, fontFamily: 'var(--font-mono)', background: ok ? 'var(--success-bg)' : warn ? 'var(--warning-bg)' : 'var(--error-container)', color: ok ? 'var(--success-color)' : warn ? 'var(--warning-color)' : 'var(--error)' }}>
+                        {log.status}
+                      </span>
+                    </td>
+                    <td style={{ padding: '12px 24px', fontSize: 13, fontWeight: 500 }}>{log.api}</td>
+                    <td style={{ padding: '12px 24px', fontFamily: 'var(--font-mono)', fontSize: 12, color: 'var(--on-surface-variant)' }}>{log.endpoint}</td>
+                    <td style={{ padding: '12px 24px', fontFamily: 'var(--font-mono)', fontSize: 12, color: log.latency > 2000 ? 'var(--error)' : log.latency > 800 ? 'var(--warning-color)' : 'var(--success-color)' }}>{log.latency}ms</td>
+                    <td style={{ padding: '12px 24px', fontSize: 12, color: 'var(--on-surface-variant)' }}>{relTime(log.timestamp)}</td>
+                  </tr>
+                );
+              })}
+            </tbody>
+          </table>
+        )}
+      </div>
     </div>
   );
 };

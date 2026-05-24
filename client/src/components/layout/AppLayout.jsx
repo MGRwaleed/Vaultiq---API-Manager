@@ -1,11 +1,15 @@
 import Sidebar from './Sidebar';
+import TopBar from './TopBar';
 
 const AppLayout = ({ children }) => (
   <div style={{ display: 'flex', minHeight: '100vh' }}>
     <Sidebar />
-    <main style={{ flex: 1, overflow: 'auto', minWidth: 0 }}>
-      {children}
-    </main>
+    <div style={{ marginLeft: 'var(--sidebar-width)', flex: 1, display: 'flex', flexDirection: 'column' }}>
+      <TopBar />
+      <main style={{ marginTop: 'var(--topbar-height)', flex: 1, padding: 32, minWidth: 0 }}>
+        {children}
+      </main>
+    </div>
   </div>
 );
 

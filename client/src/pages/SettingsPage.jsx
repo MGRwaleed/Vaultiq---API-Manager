@@ -165,7 +165,6 @@ const AppearanceSection = ({ theme, setTheme }) => (
     <SectionLabel>Appearance</SectionLabel>
     <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 14 }}>
       {[
-        { key: 'dark',  label: 'Dark',  desc: 'Default theme',   swatchBg: '#0f1117', dot1: '#2a3047', dot2: '#4f8ef7' },
         { key: 'light', label: 'Light', desc: 'Clean & minimal', swatchBg: '#f4f6f9', dot1: '#dde2ec', dot2: '#4f8ef7' },
       ].map(t => (
         <button key={t.key} onClick={() => setTheme(t.key)} style={{
