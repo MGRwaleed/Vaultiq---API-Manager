@@ -38,6 +38,15 @@ const Dashboard = () => {
   const { user } = useAuth();
   const [stats, setStats] = useState(null);
   const [loading, setLoading] = useState(true);
+  const [showNotice, setShowNotice] = useState(false);
+
+  useEffect(() => {
+  const hasSeenNotice = sessionStorage.getItem('seenProxyNotice');
+  if (!hasSeenNotice) {
+    setShowNotice(true);
+    sessionStorage.setItem('seenProxyNotice', 'true');
+  }
+}, []);
 
   useEffect(() => {
     api.get('/dashboard/stats').then(r => setStats(r.data.data)).finally(() => setLoading(false));
@@ -200,6 +209,71 @@ const Dashboard = () => {
           </table>
         )}
       </div>
+      {showNotice && (
+  <div style={{
+    position: 'fixed', inset: 0, zIndex: 100,
+    background: 'rgba(19,27,46,0.55)', backdropFilter: 'blur(4px)',
+    display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 20,
+  }}>
+    <div style={{
+      background: 'var(--surface-bright)', borderRadius: 16,
+      width: '100%', maxWidth: 480, padding: 32,
+      boxShadow: 'var(--shadow-md)', border: '1px solid var(--outline-variant)',
+    }}>
+      {/* Icon */}
+      <div style={{
+        width: 48, height: 48, borderRadius: 12,
+        background: 'var(--surface-container)',
+        border: '1px solid var(--outline-variant)',
+        display: 'flex', alignItems: 'center', justifyContent: 'center',
+        marginBottom: 20,
+      }}>
+        <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="var(--primary)" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
+          <circle cx="12" cy="12" r="10"/>
+          <line x1="12" y1="8" x2="12" y2="12"/>
+          <line x1="12" y1="16" x2="12.01" y2="16"/>
+        </svg>
+      </div>
+
+      {/* Content */}
+      <h3 style={{ fontSize: 17, fontWeight: 700, color: 'var(--on-surface)', marginBottom: 10, letterSpacing: '-0.01em' }}>
+        Heads up — External testing required
+      </h3>
+      <p style={{ fontSize: 13, color: 'var(--on-surface-variant)', lineHeight: 1.7, marginBottom: 12 }}>
+        API keys currently need to be tested externally using a tool like <strong style={{ color: 'var(--on-surface)' }}>Postman</strong> or <strong style={{ color: 'var(--on-surface)' }}>curl</strong> via the proxy endpoint:
+      </p>
+      <pre style={{
+        background: 'var(--surface-container-low)',
+        border: '1px solid var(--outline-variant)',
+        borderRadius: 8, padding: '10px 14px',
+        fontFamily: 'var(--font-mono)', fontSize: 11,
+        color: 'var(--on-surface-variant)', overflowX: 'auto',
+        lineHeight: 1.7, marginBottom: 16,
+      }}>{`POST https://vaultiq-76sz.onrender.com/api/proxy/:provider/*
+Headers:
+  Authorization: Bearer <your_jwt_token>
+  x-api-key-id: <your_key_id>`}</pre>
+      <p style={{ fontSize: 12, color: 'var(--outline)', lineHeight: 1.6, marginBottom: 24 }}>
+        🚀 The developer is working on automating this directly from the dashboard. Stay tuned!
+      </p>
+
+      {/* Button */}
+      <button
+        onClick={() => setShowNotice(false)}
+        style={{
+          width: '100%', padding: '11px 20px', borderRadius: 8,
+          background: 'var(--primary)', color: 'var(--on-primary)',
+          fontSize: 14, fontWeight: 600, border: 'none', cursor: 'pointer',
+          transition: 'opacity var(--transition)',
+        }}
+        onMouseEnter={e => e.currentTarget.style.opacity = '0.9'}
+        onMouseLeave={e => e.currentTarget.style.opacity = '1'}
+      >
+        Got it, thanks!
+      </button>
+    </div>
+  </div>
+)}
     </div>
   );
 };
