@@ -4,9 +4,9 @@ import TopBar from './TopBar';
 const AppLayout = ({ children }) => (
   <div style={{ display: 'flex', minHeight: '100vh' }}>
     <Sidebar />
-    <div style={{ marginLeft: 'var(--sidebar-width)', flex: 1, display: 'flex', flexDirection: 'column' }}>
+    <div style={{ flex: 1, display: 'flex', flexDirection: 'column', minWidth: 0 }}>
       <TopBar />
-      <main style={{ marginTop: 'var(--topbar-height)', flex: 1, padding: 32, minWidth: 0 }}>
+      <main style={{ marginTop: 'var(--topbar-height)', flex: 1, padding: 32 }}>
         {children}
       </main>
     </div>

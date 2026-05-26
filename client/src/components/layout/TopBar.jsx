@@ -18,7 +18,7 @@ const TopBar = () => {
   return (
     <header style={{
       position: 'fixed', top: 0, right: 0,
-      left: 'var(--sidebar-width)', zIndex: 40,
+      left: 'var(--sidebar-width)',
       height: 'var(--topbar-height)',
       background: 'var(--surface-bright)',
       borderBottom: '1px solid var(--outline-variant)',
