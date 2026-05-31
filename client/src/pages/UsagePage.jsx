@@ -162,125 +162,125 @@ const UsagePage = () => {
         ))}
       </div>
 
-      {/* Charts Grid */}
-      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 18 }}>
+{/* Charts Grid */}
+<div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 18 }}>
 
-        {/* Requests over time — stacked area */}
-        <ChartCard title="Requests Over Time" sub="daily request volume by provider" fullWidth>
-          <ResponsiveContainer width="100%" height={240}>
-            <AreaChart data={requestsData} margin={{ top: 4, right: 8, left: 0, bottom: 0 }}>
-              <defs>
-                {providers.map(p => (
-                  <linearGradient key={p} id={`grad-${p}`} x1="0" y1="0" x2="0" y2="1">
-                    <stop offset="5%"  stopColor={PROVIDER_COLORS[p]} stopOpacity={0.3} />
-                    <stop offset="95%" stopColor={PROVIDER_COLORS[p]} stopOpacity={0} />
-                  </linearGradient>
-                ))}
-              </defs>
-              <CartesianGrid strokeDasharray="3 3" stroke="var(--border)" vertical={false} />
-              <XAxis dataKey="date" tick={{ fill: 'var(--text-muted)', fontSize: 11 }} tickLine={false} axisLine={false} interval={tickInterval} />
-              <YAxis tick={{ fill: 'var(--text-muted)', fontSize: 11 }} tickLine={false} axisLine={false} width={40} />
-              <Tooltip content={<CustomTooltip />} />
-              <Legend wrapperStyle={{ fontSize: 12, paddingTop: 12 }} />
-              {providers.filter(p => activeProviders.includes(p)).map(p => (
-                <Area key={p} type="monotone" dataKey={p} stroke={PROVIDER_COLORS[p]} fill={`url(#grad-${p})`} strokeWidth={1.8} dot={false} />
-              ))}
-            </AreaChart>
-          </ResponsiveContainer>
-        </ChartCard>
+  {/* Requests over time — stacked area */}
+  <ChartCard title="Requests Over Time" sub="daily request volume by provider" fullWidth>
+    <ResponsiveContainer width="100%" height={240}>
+      <AreaChart data={requestsData} margin={{ top: 4, right: 8, left: 0, bottom: 0 }}>
+        <defs>
+          {providers.map(p => (
+            <linearGradient key={p} id={`grad-${p}`} x1="0" y1="0" x2="0" y2="1">
+              <stop offset="5%"  stopColor={PROVIDER_COLORS[p]} stopOpacity={0.3} />
+              <stop offset="95%" stopColor={PROVIDER_COLORS[p]} stopOpacity={0} />
+            </linearGradient>
+          ))}
+        </defs>
+        <CartesianGrid strokeDasharray="3 3" stroke="var(--border)" vertical={false} />
+        <XAxis dataKey="date" tick={{ fill: 'var(--text-muted)', fontSize: 11 }} tickLine={false} axisLine={false} interval={tickInterval} />
+        <YAxis tick={{ fill: 'var(--text-muted)', fontSize: 11 }} tickLine={false} axisLine={false} width={40} />
+        <Tooltip content={<CustomTooltip />} />
+        <Legend wrapperStyle={{ fontSize: 12, paddingTop: 12 }} />
+        {providers.filter(p => activeProviders.includes(p)).map(p => (
+          <Area key={p} type="monotone" dataKey={p} stroke={PROVIDER_COLORS[p]} fill={`url(#grad-${p})`} strokeWidth={1.8} dot={false} />
+        ))}
+      </AreaChart>
+    </ResponsiveContainer>
+  </ChartCard>
 
-        {/* Cost over time — stacked bar */}
-        <ChartCard title="Cost Over Time" sub="daily spend in USD by provider">
-          <ResponsiveContainer width="100%" height={220}>
-            <BarChart data={costData} margin={{ top: 4, right: 8, left: 0, bottom: 0 }}>
-              <CartesianGrid strokeDasharray="3 3" stroke="var(--border)" vertical={false} />
-              <XAxis dataKey="date" tick={{ fill: 'var(--text-muted)', fontSize: 11 }} tickLine={false} axisLine={false} interval={tickInterval} />
-              <YAxis tick={{ fill: 'var(--text-muted)', fontSize: 11 }} tickLine={false} axisLine={false} width={40} tickFormatter={v => `$${v}`} />
-              <Tooltip content={<CustomTooltip prefix="$" />} />
-              <Legend wrapperStyle={{ fontSize: 12, paddingTop: 12 }} />
-              {providers.filter(p => activeProviders.includes(p)).map(p => (
-                <Bar key={p} dataKey={p} stackId="cost" fill={PROVIDER_COLORS[p]} radius={p === providers[providers.length - 1] ? [3, 3, 0, 0] : [0, 0, 0, 0]} />
-              ))}
-            </BarChart>
-          </ResponsiveContainer>
-        </ChartCard>
+  {/* Cost over time — stacked bar */}
+  <ChartCard title="Cost Over Time" sub="daily spend in USD by provider">
+    <ResponsiveContainer width="100%" height={220}>
+      <BarChart data={costData} margin={{ top: 4, right: 8, left: 0, bottom: 0 }}>
+        <CartesianGrid strokeDasharray="3 3" stroke="var(--border)" vertical={false} />
+        <XAxis dataKey="date" tick={{ fill: 'var(--text-muted)', fontSize: 11 }} tickLine={false} axisLine={false} interval={tickInterval} />
+        <YAxis tick={{ fill: 'var(--text-muted)', fontSize: 11 }} tickLine={false} axisLine={false} width={40} tickFormatter={v => `$${v}`} />
+        <Tooltip content={<CustomTooltip prefix="$" />} />
+        <Legend wrapperStyle={{ fontSize: 12, paddingTop: 12 }} />
+        {providers.filter(p => activeProviders.includes(p)).map(p => (
+          <Bar key={p} dataKey={p} stackId="cost" fill={PROVIDER_COLORS[p]} radius={p === providers[providers.length - 1] ? [3, 3, 0, 0] : [0, 0, 0, 0]} />
+        ))}
+      </BarChart>
+    </ResponsiveContainer>
+  </ChartCard>
 
-        {/* Error rate — line chart */}
-        <ChartCard title="Error Rate" sub="% of requests that returned 4xx/5xx">
-          <ResponsiveContainer width="100%" height={220}>
-            <LineChart data={errorData} margin={{ top: 4, right: 8, left: 0, bottom: 0 }}>
-              <CartesianGrid strokeDasharray="3 3" stroke="var(--border)" vertical={false} />
-              <XAxis dataKey="date" tick={{ fill: 'var(--text-muted)', fontSize: 11 }} tickLine={false} axisLine={false} interval={tickInterval} />
-              <YAxis tick={{ fill: 'var(--text-muted)', fontSize: 11 }} tickLine={false} axisLine={false} width={36} tickFormatter={v => `${v}%`} />
-              <Tooltip content={<CustomTooltip suffix="%" />} />
-              <Line type="monotone" dataKey="rate" stroke="var(--error)" strokeWidth={2} dot={false} name="Error Rate" />
-            </LineChart>
-          </ResponsiveContainer>
-        </ChartCard>
+  {/* Error rate — line chart */}
+  <ChartCard title="Error Rate" sub="% of requests that returned 4xx/5xx">
+    <ResponsiveContainer width="100%" height={220}>
+      <LineChart data={errorData} margin={{ top: 4, right: 8, left: 0, bottom: 0 }}>
+        <CartesianGrid strokeDasharray="3 3" stroke="var(--border)" vertical={false} />
+        <XAxis dataKey="date" tick={{ fill: 'var(--text-muted)', fontSize: 11 }} tickLine={false} axisLine={false} interval={tickInterval} />
+        <YAxis tick={{ fill: 'var(--text-muted)', fontSize: 11 }} tickLine={false} axisLine={false} width={36} tickFormatter={v => `${v}%`} />
+        <Tooltip content={<CustomTooltip suffix="%" />} />
+        <Line type="monotone" dataKey="rate" stroke="var(--error)" strokeWidth={2} dot={false} name="Error Rate" />
+      </LineChart>
+    </ResponsiveContainer>
+  </ChartCard>
 
-        {/* Provider share — donut */}
-        <ChartCard title="Request Share" sub="total requests by provider this month">
-          <ResponsiveContainer width="100%" height={220}>
-            <PieChart>
-              <Pie
-                data={providerShare}
-                cx="50%" cy="50%"
-                innerRadius={55} outerRadius={90}
-                paddingAngle={3}
-                dataKey="value"
-                nameKey="name"
-                label={({ name, percent }) => `${name} ${(percent * 100).toFixed(0)}%`}
-                labelLine={false}
-              >
-                {providerShare.map(entry => (
-                  <Cell key={entry.name} fill={PROVIDER_COLORS[entry.name] || '#8891aa'} />
-                ))}
-              </Pie>
-              <Tooltip formatter={(val) => val.toLocaleString()} />
-            </PieChart>
-          </ResponsiveContainer>
-        </ChartCard>
+  {/* Provider share — donut */}
+  <ChartCard title="Request Share" sub="total requests by provider this month">
+    <ResponsiveContainer width="100%" height={220}>
+      <PieChart>
+        <Pie
+          data={providerShare}
+          cx="50%" cy="50%"
+          innerRadius={55} outerRadius={90}
+          paddingAngle={3}
+          dataKey="value"
+          nameKey="name"
+          label={({ name, percent }) => `${name} ${(percent * 100).toFixed(0)}%`}
+          labelLine={false}
+        >
+          {providerShare.map(entry => (
+            <Cell key={entry.name} fill={PROVIDER_COLORS[entry.name] || '#8891aa'} />
+          ))}
+        </Pie>
+        <Tooltip formatter={(val) => val.toLocaleString()} />
+      </PieChart>
+    </ResponsiveContainer>
+  </ChartCard>
 
-        {/* Latency table */}
-        <ChartCard title="Latency by Provider" sub="p50 and p95 response times in ms" fullWidth>
-          <table style={{ width: '100%', borderCollapse: 'collapse' }}>
-            <thead>
-              <tr>
-                {['Provider', 'p50 (median)', 'p95', 'Rating'].map(h => (
-                  <th key={h} style={{ textAlign: 'left', padding: '8px 12px', fontSize: 11, color: 'var(--text-muted)', fontWeight: 600, letterSpacing: '0.05em', textTransform: 'uppercase', borderBottom: '1px solid var(--border)' }}>{h}</th>
-                ))}
-              </tr>
-            </thead>
-            <tbody>
-              {latencyByProvider.map((row, i) => {
-                const rating = row.p50 < 400
-                  ? { label: 'Fast', color: 'var(--success)' }
-                  : row.p50 < 900
-                    ? { label: 'Good', color: 'var(--warning)' }
-                    : { label: 'Slow', color: 'var(--error)' };
-                return (
-                  <tr key={row.provider} style={{ borderBottom: i < latencyByProvider.length - 1 ? '1px solid var(--border)' : 'none' }}>
-                    <td style={{ padding: '11px 12px' }}>
-                      <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-                        <span style={{ width: 8, height: 8, borderRadius: '50%', background: PROVIDER_COLORS[row.provider], display: 'inline-block', flexShrink: 0 }} />
-                        <span style={{ fontSize: 13, fontWeight: 500 }}>{row.provider}</span>
-                      </div>
-                    </td>
-                    <td style={{ padding: '11px 12px', fontFamily: 'var(--font-mono)', fontSize: 13 }}>{row.p50}ms</td>
-                    <td style={{ padding: '11px 12px', fontFamily: 'var(--font-mono)', fontSize: 13, color: 'var(--text-secondary)' }}>{row.p95}ms</td>
-                    <td style={{ padding: '11px 12px' }}>
-                      <span style={{ fontSize: 11, fontWeight: 600, color: rating.color, background: `${rating.color}18`, padding: '3px 10px', borderRadius: 99 }}>
-                        {rating.label}
-                      </span>
-                    </td>
-                  </tr>
-                );
-              })}
-            </tbody>
-          </table>
-        </ChartCard>
+  {/* Latency table — now side by side with donut */}
+  <ChartCard title="Latency by Provider" sub="p50 and p95 response times in ms">
+    <table style={{ width: '100%', borderCollapse: 'collapse' }}>
+      <thead>
+        <tr>
+          {['Provider', 'p50 (median)', 'p95', 'Rating'].map(h => (
+            <th key={h} style={{ textAlign: 'left', padding: '8px 12px', fontSize: 11, color: 'var(--text-muted)', fontWeight: 600, letterSpacing: '0.05em', textTransform: 'uppercase', borderBottom: '1px solid var(--border)' }}>{h}</th>
+          ))}
+        </tr>
+      </thead>
+      <tbody>
+        {latencyByProvider.map((row, i) => {
+          const rating = row.p50 < 400
+            ? { label: 'Fast', color: 'var(--success)' }
+            : row.p50 < 900
+              ? { label: 'Good', color: 'var(--warning)' }
+              : { label: 'Slow', color: 'var(--error)' };
+          return (
+            <tr key={row.provider} style={{ borderBottom: i < latencyByProvider.length - 1 ? '1px solid var(--border)' : 'none' }}>
+              <td style={{ padding: '11px 12px' }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                  <span style={{ width: 8, height: 8, borderRadius: '50%', background: PROVIDER_COLORS[row.provider], display: 'inline-block', flexShrink: 0 }} />
+                  <span style={{ fontSize: 13, fontWeight: 500 }}>{row.provider}</span>
+                </div>
+              </td>
+              <td style={{ padding: '11px 12px', fontFamily: 'var(--font-mono)', fontSize: 13 }}>{row.p50}ms</td>
+              <td style={{ padding: '11px 12px', fontFamily: 'var(--font-mono)', fontSize: 13, color: 'var(--text-secondary)' }}>{row.p95}ms</td>
+              <td style={{ padding: '11px 12px' }}>
+                <span style={{ fontSize: 11, fontWeight: 600, color: rating.color, background: `${rating.color}18`, padding: '3px 10px', borderRadius: 99 }}>
+                  {rating.label}
+                </span>
+              </td>
+            </tr>
+          );
+        })}
+      </tbody>
+    </table>
+  </ChartCard>
 
-      </div>
+</div>
       <style>{`@keyframes spin { to { transform: rotate(360deg); } }`}</style>
     </div>
   );
