@@ -8,13 +8,14 @@ import api from '../lib/api';
 
 /* ── Constants ────────────────────────────────────────────────── */
 const PROVIDER_COLORS = {
+  Anthropic: '#c96442',
   OpenAI:    '#10a37f',
   Groq:      '#f55036',
   Tavily:    '#6366f1',
   Deepgram:  '#ec4899',
   Deepseek:  '#00c2ff',
-  Anthropic: '#c96442',
-  Gemini:    '#f59e0b'
+  Gemini:    '#4285f4',
+  Other:     '#f59e0b',
 };
 
 const CHART_STYLE = {
@@ -111,7 +112,9 @@ const UsagePage = () => {
   const requestsData = data?.requestsPerDay?.slice(-sliceCount) || [];
   const costData     = data?.costPerDay?.slice(-sliceCount) || [];
   const errorData    = data?.errorRatePerDay?.slice(-sliceCount) || [];
-  const providers    = Object.keys(PROVIDER_COLORS);
+  const providers = data ? [...new Set(
+  data.requestsPerDay.flatMap(d => Object.keys(d).filter(k => k !== 'date'))
+  )] : [];
 
   const tickInterval = sliceCount === 7 ? 0 : sliceCount === 14 ? 1 : 4;
 
