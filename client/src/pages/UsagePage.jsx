@@ -19,9 +19,9 @@ const PROVIDER_COLORS = {
 };
 
 const CHART_STYLE = {
-  background: 'var(--bg-surface)',
-  border: '1px solid var(--border)',
-  borderRadius: 'var(--radius)',
+  background: 'var(--surface-bright)',
+  border: '1px solid var(--outline-variant)',
+  borderRadius: 12,
   padding: 20,
 };
 
@@ -53,8 +53,8 @@ const CustomTooltip = ({ active, payload, label, prefix = '', suffix = '' }) => 
   if (!active || !payload?.length) return null;
   return (
     <div style={{
-      background: 'var(--bg-elevated)', border: '1px solid var(--border)',
-      borderRadius: 'var(--radius-sm)', padding: '10px 14px',
+      background: 'var(--surface-container-low)', border: '1px solid var(--outline-variant)',
+      borderRadius: 8, padding: '10px 14px',
       fontSize: 12, boxShadow: 'var(--shadow)',
     }}>
       <div style={{ color: 'var(--text-muted)', marginBottom: 6, fontWeight: 600 }}>{label}</div>
@@ -78,9 +78,9 @@ const RangeSelector = ({ value, onChange }) => (
       <button key={r} onClick={() => onChange(r)} style={{
         padding: '5px 12px', borderRadius: 'var(--radius-sm)', fontSize: 12, fontWeight: 500,
         cursor: 'pointer', border: '1px solid',
-        borderColor: value === r ? 'var(--accent)' : 'var(--border)',
-        background: value === r ? 'var(--accent-subtle)' : 'transparent',
-        color: value === r ? 'var(--accent)' : 'var(--text-secondary)',
+        borderColor: value === r ? 'var(--primary)' : 'var(--outline-variant)',
+        background: value === r ? 'var(--surface-container)' : 'transparent',
+        color: value === r ? 'var(--primary)' : 'var(--on-surface-variant)',
         transition: 'all var(--transition)',
       }}>{r}</button>
     ))}
@@ -145,7 +145,7 @@ const UsagePage = () => {
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(200px, 1fr))', gap: 14, marginBottom: 28 }}>
         <SummaryCard label="Total Requests" value={summary.totalRequestsThisMonth.toLocaleString()} sub="this month" color="var(--accent)" />
         <SummaryCard label="Total Cost" value={`$${summary.totalCostThisMonth.toFixed(2)}`} sub="this month" color="var(--warning)" />
-        <SummaryCard label="Avg Latency" value={`${summary.avgLatencyMs}ms`} sub="across all providers" color="var(--info)" />
+        <SummaryCard label="Avg Latency" value={`${summary.avgLatencyMs}ms`} sub="across all providers" color="#3b82f6" />
         <SummaryCard label="Error Rate" value={`${summary.errorRatePercent}%`} sub="last 30 days" color="var(--error)" />
         <SummaryCard label="Top Provider" value={summary.topProvider} sub="by request volume" color={PROVIDER_COLORS[summary.topProvider]} />
       </div>
