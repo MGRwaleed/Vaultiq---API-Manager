@@ -5,7 +5,7 @@ export const getDashboardStats = async (req, res) => {
   try {
     const userId     = req.user._id;
     const todayStart = new Date(new Date().setHours(0, 0, 0, 0));
-    const monthStart = new Date(new Date().getFullYear(), new Date().getMonth(), 1);
+    const monthStart = new Date(Date.now() - 30 * 86400000);
 
     const [
       totalApis,
